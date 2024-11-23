@@ -30,13 +30,6 @@ designed to be a basic example of how to create a GitHub webhook listener using 
 3. Run `go run main.go` to start the application
 4. Configure your GitHub webhook to point to `http://localhost:3000/github-webhook` use Ngrok for testing
 
-## Setup
-
-1. Clone this repository to your local machine
-2. Install Go (if not already installed)
-3. Run `go run main.go` to start the application
-4. Configure your GitHub webhook to point to `http://localhost:3000/github-webhook`
-
 > As you know You can't use localhost for webhooks. you can
 > use [Ngrok](https://dashboard.ngrok.com/get-started/setup/linux) for that.
 
