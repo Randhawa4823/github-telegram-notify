@@ -25,10 +25,10 @@ designed to be a basic example of how to create a GitHub webhook listener using 
 
 ## Installation
 
-1. Clone this repository to your local machine
-2. Install Go (if not already installed)
+1. Install Go (if not already installed) : [https://go.dev/dl/](https://go.dev/dl/)
+2. Clone this repository to your local machine and navigate to the project directory
 3. Run `go run main.go` to start the application
-4. Configure your GitHub webhook to point to `http://localhost:3000/github-webhook` use Ngrok for testing
+4. Configure your GitHub webhook to point to `http://localhost:3000/github` use Ngrok for testing/localhost
 
 > As you know You can't use localhost for webhooks. you can
 > use [Ngrok](https://dashboard.ngrok.com/get-started/setup/linux) for that.
@@ -38,9 +38,10 @@ designed to be a basic example of how to create a GitHub webhook listener using 
 1. Go to your GitHub repository settings
 2. Click on "Webhooks"
 3. Click on "Add webhook"
-4. Enter the URL `http://localhost:3000/github-webhook`
-5. Choose the events you want to listen for (e.g. push, pull request, issue)
-6. Click "Add webhook"
+4. Enter the URL `http://localhost:3000/github?chat_id=-1000000000`
+5. Set Content type to "application/json"
+6. Choose the events you want to listen for (e.g. push, pull request, issue)
+7. Click "Add webhook"
 
 ## Deployment
 
