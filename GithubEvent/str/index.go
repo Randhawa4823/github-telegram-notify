@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func Home(w http.ResponseWriter, r *http.Request) {
+func Home(w http.ResponseWriter, _ *http.Request) {
 	tmpl, err := template.New("index").Parse(indexhtml)
 	if err != nil {
 		http.Error(w, "Error loading page", http.StatusInternalServerError)
@@ -15,11 +15,6 @@ func Home(w http.ResponseWriter, r *http.Request) {
 	if err := tmpl.Execute(w, nil); err != nil {
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
 	}
-}
-
-func Health(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
 }
 
 const indexhtml = `<!DOCTYPE html>

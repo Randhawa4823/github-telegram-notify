@@ -2,12 +2,11 @@ package str
 
 import (
 	"fmt"
+	"github-webhook/GithubEvent/config"
 	"io"
 	"log"
 	"net/http"
 	"strings"
-
-	"github-webhook/GithubEvent/config"
 )
 
 func sendToTelegram(chatID, message string) {

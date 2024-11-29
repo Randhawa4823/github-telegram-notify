@@ -2,9 +2,10 @@ package str
 
 import (
 	"fmt"
-	"github.com/google/go-github/v66/github"
 	"log"
 	"net/http"
+
+	"github.com/google/go-github/v67/github"
 )
 
 // GitHubWebhook processes GitHub webhooks
