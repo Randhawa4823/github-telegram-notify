@@ -3,6 +3,7 @@ package str
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"strings"
 
 	"github.com/google/go-github/v67/github"
@@ -18,11 +19,11 @@ func handleIssuesEvent(event *github.IssuesEvent) string {
 	body := issue.GetBody()
 
 	baseMessage := fmt.Sprintf(
-		"<b>Issue Event in Repository:</b> %s\n"+
-			"<b>Action:</b> %s\n"+
-			"<b>Sender:</b> %s\n"+
-			"<b>Issue Title:</b> %s\n"+
-			"<b>Issue URL:</b> <a href='%s'>%s</a>\n",
+		"📂 <b>Repository:</b> %s\n"+
+			"⚡ <b>Action:</b> %s\n"+
+			"👤 <b>Sender:</b> %s\n"+
+			"📝 <b>Issue:</b> %s\n"+
+			"🔗 <b>URL:</b> <a href='%s'>%s</a>\n",
 		repo,
 		action,
 		sender,
@@ -32,33 +33,33 @@ func handleIssuesEvent(event *github.IssuesEvent) string {
 
 	switch action {
 	case "opened":
-		return baseMessage + fmt.Sprintf("<b>Description:</b>\n%s\n", body)
+		return baseMessage + fmt.Sprintf("✍️ <b>Description:</b>\n%s\n", body)
 
 	case "edited":
-		return baseMessage + fmt.Sprintf("<i>Issue was edited.</i>\n<b>Description:</b>\n%s\n", body)
+		return baseMessage + fmt.Sprintf("✏️ <i>Issue was edited.</i>\n✍️ <b>Description:</b>\n%s\n", body)
 
 	case "deleted":
-		return baseMessage + "<i>The issue was deleted.</i>\n"
+		return baseMessage + "🗑️ <i>The issue was deleted.</i>\n"
 
 	case "transferred":
-		return baseMessage + "<i>The issue was transferred to a different repository.</i>\n"
+		return baseMessage + "🔄 <i>The issue was transferred to a different repository.</i>\n"
 
 	case "pinned":
-		return baseMessage + "<i>The issue was pinned.</i>\n"
+		return baseMessage + "📌 <i>The issue was pinned.</i>\n"
 
 	case "unpinned":
-		return baseMessage + "<i>The issue was unpinned.</i>\n"
+		return baseMessage + "📌❌ <i>The issue was unpinned.</i>\n"
 
 	case "closed":
 		closedBy := issue.GetClosedBy()
 		closer := ""
 		if closedBy != nil {
-			closer = fmt.Sprintf("<b>Closed by:</b> %s\n", closedBy.GetLogin())
+			closer = fmt.Sprintf("🔒 <b>Closed by:</b> %s\n", closedBy.GetLogin())
 		}
-		return baseMessage + closer + "<i>The issue is now closed.</i>\n"
+		return baseMessage + closer + "🔒 <i>The issue is now closed.</i>\n"
 
 	case "reopened":
-		return baseMessage + "<i>The issue was reopened.</i>\n"
+		return baseMessage + "🔓 <i>The issue was reopened.</i>\n"
 
 	case "assigned":
 		assignees := issue.Assignees
@@ -66,10 +67,10 @@ func handleIssuesEvent(event *github.IssuesEvent) string {
 		for _, assignee := range assignees {
 			assigneeNames = append(assigneeNames, assignee.GetLogin())
 		}
-		return baseMessage + fmt.Sprintf("<b>Assignees:</b> %s\n", strings.Join(assigneeNames, ", "))
+		return baseMessage + fmt.Sprintf("🙋 <b>Assignees:</b> %s\n", strings.Join(assigneeNames, ", "))
 
 	case "unassigned":
-		return baseMessage + "<i>An assignee was removed from the issue.</i>\n"
+		return baseMessage + "🙅 <i>An assignee was removed from the issue.</i>\n"
 
 	case "labeled":
 		labels := issue.Labels
@@ -77,31 +78,32 @@ func handleIssuesEvent(event *github.IssuesEvent) string {
 		for _, label := range labels {
 			labelNames = append(labelNames, label.GetName())
 		}
-		return baseMessage + fmt.Sprintf("<b>Labels:</b> %s\n", strings.Join(labelNames, ", "))
+		return baseMessage + fmt.Sprintf("🏷️ <b>Labels:</b> %s\n", strings.Join(labelNames, ", "))
 
 	case "unlabeled":
-		return baseMessage + "<i>A label was removed from the issue.</i>\n"
+		return baseMessage + "🏷️❌ <i>A label was removed from the issue.</i>\n"
 
 	case "locked":
-		return baseMessage + "<i>The issue was locked.</i>\n"
+		return baseMessage + "🔒 <i>The issue was locked.</i>\n"
 
 	case "unlocked":
-		return baseMessage + "<i>The issue was unlocked.</i>\n"
+		return baseMessage + "🔓 <i>The issue was unlocked.</i>\n"
 
 	case "milestoned":
 		milestone := issue.GetMilestone()
 		if milestone != nil {
-			return baseMessage + fmt.Sprintf("<b>Milestone:</b> %s\n", milestone.GetTitle())
+			return baseMessage + fmt.Sprintf("🏁 <b>Milestone:</b> %s\n", milestone.GetTitle())
 		}
-		return baseMessage + "<i>The issue was added to a milestone.</i>\n"
+		return baseMessage + "🏁 <i>The issue was added to a milestone.</i>\n"
 
 	case "demilestoned":
-		return baseMessage + "<i>The issue was removed from a milestone.</i>\n"
+		return baseMessage + "🏁❌ <i>The issue was removed from a milestone.</i>\n"
 
 	default:
-		return baseMessage + "<i>Unhandled action.</i>\n"
+		return baseMessage + "❓ <i>Unhandled action.</i>\n"
 	}
 }
+
 func handlePullRequestEvent(event *github.PullRequestEvent) string {
 	repo := event.GetRepo().GetFullName()
 	action := event.GetAction()
@@ -112,59 +114,56 @@ func handlePullRequestEvent(event *github.PullRequestEvent) string {
 	body := pr.GetBody()
 	state := pr.GetState()
 
-	// Base message using Telegram supported HTML tags
 	baseMessage := fmt.Sprintf(
-		"<b>Pull Request Event in Repository:</b> %s\n"+
-			"<b>Action:</b> %s\n"+
-			"<b>Sender:</b> %s\n"+
-			"<b>PR Title:</b> %s\n"+
-			"<b>PR URL:</b> <a href='%s'>%s</a>\n"+
-			"<b>State:</b> %s\n",
-		repo,
+		"📂 <b>Repository:</b> <a href='https://github.com/%s'>%s</a>\n"+
+			"⚡ <b>Action:</b> %s\n"+
+			"👤 <b>Sender:</b> <a href='https://github.com/%s'>%s</a>\n"+
+			"🔗 <b>Pull Request:</b> <a href='%s'>%s</a>\n"+
+			"📌 <b>State:</b> %s\n",
+		repo, repo,
 		action,
-		sender,
-		title,
-		url, url,
+		sender, sender,
+		url, title,
 		state,
 	)
 
 	switch action {
 	case "opened":
-		return baseMessage + fmt.Sprintf("<b>Description:</b>\n%s\n", body)
+		return baseMessage + fmt.Sprintf("✍️ <b>Description:</b>\n%s\n", body)
 
 	case "closed":
 		if pr.GetMerged() {
-			return baseMessage + "<i>The pull request was merged successfully.</i>\n"
+			return baseMessage + "✅ <i>The pull request was successfully merged.</i>\n"
 		}
-		return baseMessage + "<i>The pull request was closed without merging.</i>\n"
+		return baseMessage + "❌ <i>The pull request was closed without merging.</i>\n"
 
 	case "reopened":
-		return baseMessage + "<i>The pull request was reopened.</i>\n"
+		return baseMessage + "🔄 <i>The pull request was reopened.</i>\n"
 
 	case "edited":
-		return baseMessage + fmt.Sprintf("<i>The pull request was edited.</i>\n<b>Description:</b>\n%s\n", body)
+		return baseMessage + fmt.Sprintf("✏️ <i>The pull request was edited.</i>\n✍️ <b>Description:</b>\n%s\n", body)
 
 	case "assigned":
 		assignees := pr.Assignees
-		var assigneeNames []string
+		var assigneeLinks []string
 		for _, assignee := range assignees {
-			assigneeNames = append(assigneeNames, assignee.GetLogin())
+			assigneeLinks = append(assigneeLinks, fmt.Sprintf("<a href='https://github.com/%s'>%s</a>", assignee.GetLogin(), assignee.GetLogin()))
 		}
-		return baseMessage + fmt.Sprintf("<b>Assigned to:</b> %s\n", strings.Join(assigneeNames, ", "))
+		return baseMessage + fmt.Sprintf("🙋 <b>Assigned to:</b> %s\n", strings.Join(assigneeLinks, ", "))
 
 	case "unassigned":
-		return baseMessage + "<i>An assignee was removed from the pull request.</i>\n"
+		return baseMessage + "🙅 <i>An assignee was removed from the pull request.</i>\n"
 
 	case "review_requested":
 		reviewers := pr.RequestedReviewers
-		var reviewerNames []string
+		var reviewerLinks []string
 		for _, reviewer := range reviewers {
-			reviewerNames = append(reviewerNames, reviewer.GetLogin())
+			reviewerLinks = append(reviewerLinks, fmt.Sprintf("<a href='https://github.com/%s'>%s</a>", reviewer.GetLogin(), reviewer.GetLogin()))
 		}
-		return baseMessage + fmt.Sprintf("<b>Review requested from:</b> %s\n", strings.Join(reviewerNames, ", "))
+		return baseMessage + fmt.Sprintf("📝 <b>Review requested from:</b> %s\n", strings.Join(reviewerLinks, ", "))
 
 	case "review_request_removed":
-		return baseMessage + "<i>A review request was removed from the pull request.</i>\n"
+		return baseMessage + "❌ <i>A review request was removed from the pull request.</i>\n"
 
 	case "labeled":
 		labels := pr.Labels
@@ -172,64 +171,69 @@ func handlePullRequestEvent(event *github.PullRequestEvent) string {
 		for _, label := range labels {
 			labelNames = append(labelNames, label.GetName())
 		}
-		return baseMessage + fmt.Sprintf("<b>Labels:</b> %s\n", strings.Join(labelNames, ", "))
+		return baseMessage + fmt.Sprintf("🏷️ <b>Labels:</b> %s\n", strings.Join(labelNames, ", "))
 
 	case "unlabeled":
-		return baseMessage + "<i>A label was removed from the pull request.</i>\n"
+		return baseMessage + "🏷️❌ <i>A label was removed from the pull request.</i>\n"
 
 	case "locked":
-		return baseMessage + "<i>The pull request was locked.</i>\n"
+		return baseMessage + "🔒 <i>The pull request was locked.</i>\n"
 
 	case "unlocked":
-		return baseMessage + "<i>The pull request was unlocked.</i>\n"
+		return baseMessage + "🔓 <i>The pull request was unlocked.</i>\n"
 
 	case "synchronize":
-		return baseMessage + "<i>The pull request was synchronized (updated with new commits).</i>\n"
+		return baseMessage + "🔄 <i>The pull request was synchronized (updated with new commits).</i>\n"
 
 	default:
-		return baseMessage + "<i>Unhandled action.</i>\n"
+		return baseMessage + "❓ <i>Unhandled action.</i>\n"
 	}
 }
+
 func handleStarredEvent(event *github.StarredRepository) string {
 	repo := event.Repository.GetFullName()
+	repoURL := event.Repository.GetHTMLURL()
 	sender := event.Repository.Owner.GetLogin()
 	stars := event.Repository.GetStargazersCount()
 	forks := event.Repository.GetForksCount()
 
 	return fmt.Sprintf(
-		"<b>🌟 Repository Starring Event</b>\n\n"+
-			"<b>Repository:</b> <a href='%s'>%s</a>\n"+
-			"<b>Starred by:</b> <i>%s</i>\n\n"+
-			"<b>Total Stars:</b> <b>%d</b> | <b>Total Forks:</b> <b>%d</b>\n\n"+
-			"<i>Keep up the great work!</i>",
-		event.Repository.GetHTMLURL(),
+		"🌟 <b>Repository Starred Event</b>\n\n"+
+			"📂 <b>Repository:</b> <a href='%s'>%s</a>\n"+
+			"👤 <b>Starred by:</b> <a href='https://github.com/%s'>%s</a>\n\n"+
+			"✨ <b>Total Stars:</b> %d | 🍴 <b>Total Forks:</b> %d\n\n"+
+			"💡 <i>Keep up the great work!</i>",
+		repoURL,
 		repo,
-		sender,
+		sender, sender,
 		stars,
 		forks,
 	)
 }
 func handlePushEvent(event *github.PushEvent) string {
 	repo := event.Repo.GetFullName()
+	repoURL := event.Repo.GetHTMLURL()
 	sender := event.Sender.GetLogin()
-	ref := event.GetRef()                      // Branch or tag reference
-	compareURL := event.GetCompare()           // Compare URL for the push
-	commitCount := event.Commits               // Total number of commits in the push
-	distinctCommits := event.GetDistinctSize() // Number of distinct commits
-	created := event.GetCreated()              // Indicates if the branch was created
-	deleted := event.GetDeleted()              // Indicates if the branch was deleted
-	forced := event.GetForced()                // Indicates if the push was a force-push
+	ref := event.GetRef()
+	compareURL := event.GetCompare()
+	commitCount := len(event.Commits)
+	distinctCommits := event.GetDistinctSize()
+	created := event.GetCreated()
+	deleted := event.GetDeleted()
+	forced := event.GetForced()
 
 	// Push summary
 	message := fmt.Sprintf(
-		"<b>🚀 %s pushed to <i>%s</i> in <a href='%s'>%s</a></b>\n\n",
-		sender,
-		ref,
-		event.Repo.GetHTMLURL(),
+		"<b>🚀 Push Event in Repository:</b> <a href='%s'>%s</a>\n"+
+			"<b>📂 Branch/Ref:</b> <i>%s</i>\n"+
+			"<b>👤 Pushed by:</b> %s\n\n",
+		repoURL,
 		repo,
+		ref,
+		sender,
 	)
 
-	// Include branch creation/deletion/force-push information
+	// Include branch creation/deletion/force-push details
 	if created {
 		message += "<i>🌱 A new branch was created.</i>\n\n"
 	} else if deleted {
@@ -240,82 +244,81 @@ func handlePushEvent(event *github.PushEvent) string {
 
 	// Commit summary
 	message += fmt.Sprintf(
-		"<b>📊 Commits:</b> %d <i>(Distinct: %d)</i>\n\n"+
-			"<b>🔗 Compare changes:</b> <a href='%s'>Compare Commits</a>\n\n",
-		len(commitCount),
+		"<b>📊 Total Commits:</b> %d <i>(Distinct: %d)</i>\n"+
+			"<b>🔗 Compare Changes:</b> <a href='%s'>View Comparison</a>\n\n",
+		commitCount,
 		distinctCommits,
 		compareURL,
 	)
 
 	// List individual commits
-	if len(event.Commits) > 0 {
+	if commitCount > 0 {
 		message += "<b>🔨 Commit Details:</b>\n\n"
 		for _, commit := range event.Commits {
 			commitMessage := commit.GetMessage()
 			author := commit.Author.GetName()
 			url := commit.GetURL()
 
-			// Add files modified, added, or removed
+			message += fmt.Sprintf(
+				"• <i>%s</i> by <b>%s</b> (<a href='%s'>View Commit</a>)\n",
+				commitMessage,
+				author,
+				url,
+			)
+
+			// Add details about files changed in each commit
 			added := commit.Added
 			removed := commit.Removed
 			modified := commit.Modified
 
 			if len(added) > 0 || len(removed) > 0 || len(modified) > 0 {
-				message += "<i>Changed Files:</i>\n"
-
+				message += "<i>📁 Changed Files:</i>\n"
 				if len(added) > 0 {
-					message += "<b>Added:</b> " + fmt.Sprintf("%v", added) + "\n"
+					message += fmt.Sprintf("<b>➕ Added:</b> %v\n", added)
 				}
 				if len(removed) > 0 {
-					message += "<b>Removed:</b> " + fmt.Sprintf("%v", removed) + "\n"
+					message += fmt.Sprintf("<b>❌ Removed:</b> %v\n", removed)
 				}
 				if len(modified) > 0 {
-					message += "<b>Modified:</b> " + fmt.Sprintf("%v", modified) + "\n"
+					message += fmt.Sprintf("<b>✏️ Modified:</b> %v\n", modified)
 				}
 			}
-
-			message += fmt.Sprintf(
-				"• <i>%s</i> by <b>%s</b> (<a href='%s'>View Commit</a>)\n\n",
-				commitMessage,
-				author,
-				url,
-			)
+			message += "\n"
 		}
 	} else if event.HeadCommit != nil {
 		// Add details for the head commit if no commit list is provided
 		headCommit := event.HeadCommit
 		message += fmt.Sprintf(
-			"<b>Head Commit:</b> <i>%s</i> by <b>%s</b> (<a href='%s'>View Commit</a>)\n\n",
+			"<b>📍 Head Commit:</b> <i>%s</i> by <b>%s</b> (<a href='%s'>View Commit</a>)\n",
 			headCommit.GetMessage(),
 			headCommit.Author.GetName(),
 			headCommit.GetURL(),
 		)
 
-		// Add files modified, added, or removed in the head commit
+		// Add files changed in the head commit
 		added := headCommit.Added
 		removed := headCommit.Removed
 		modified := headCommit.Modified
 
 		if len(added) > 0 || len(removed) > 0 || len(modified) > 0 {
-			message += "<i>Changed Files:</i>\n"
-
+			message += "<i>📁 Changed Files:</i>\n"
 			if len(added) > 0 {
-				message += "<b>Added:</b> " + fmt.Sprintf("%v", added) + "\n"
+				message += fmt.Sprintf("<b>➕ Added:</b> %v\n", added)
 			}
 			if len(removed) > 0 {
-				message += "<b>Removed:</b> " + fmt.Sprintf("%v", removed) + "\n"
+				message += fmt.Sprintf("<b>❌ Removed:</b> %v\n", removed)
 			}
 			if len(modified) > 0 {
-				message += "<b>Modified:</b> " + fmt.Sprintf("%v", modified) + "\n"
+				message += fmt.Sprintf("<b>✏️ Modified:</b> %v\n", modified)
 			}
 		}
 	}
 
 	return message
 }
-
 func handleCreateEvent(event *github.CreateEvent) string {
 	repo := event.Repo.GetFullName()
+	repoURL := event.Repo.GetHTMLURL()
 	sender := event.Sender.GetLogin()
 	refType := event.GetRefType() // "branch", "tag", etc.
 	ref := event.GetRef()         // Name of the branch, tag, or reference
@@ -329,61 +332,65 @@ func handleCreateEvent(event *github.CreateEvent) string {
 		sender,
 		refType,
 		ref,
-		event.Repo.GetHTMLURL(),
+		repoURL,
 		repo,
 	)
 
 	// Add repository description if available
 	if description != "" {
-		message += fmt.Sprintf("<i>📖 Repository Description:</i> %s\n", description)
+		message += fmt.Sprintf("<i>📖 Repository Description:</i> %s\n\n", description)
 	}
 
-	// Add master branch information for branches
+	// Add master branch information if the reference type is a branch
 	if refType == "branch" && masterBranch != "" {
-		message += fmt.Sprintf("<i>🌟 Default Branch:</i> <b>%s</b>\n", masterBranch)
+		message += fmt.Sprintf("<i>🌟 Default Branch:</i> <b>%s</b>\n\n", masterBranch)
 	}
 
 	// Add pusher type if available
 	if pusherType != "" {
-		message += fmt.Sprintf("<i>👤 Pusher Type:</i> <b>%s</b>\n", pusherType)
+		message += fmt.Sprintf("<i>👤 Pusher Type:</i> <b>%s</b>\n\n", pusherType)
 	}
 
 	return message
 }
 func handleDeleteEvent(event *github.DeleteEvent) string {
 	repo := event.Repo.GetFullName()
+	repoURL := event.Repo.GetHTMLURL()
 	sender := event.Sender.GetLogin()
 	refType := event.GetRefType() // "branch" or "tag"
 	ref := event.GetRef()         // Name of the deleted branch or tag
 
 	// Format message based on the type of deletion
+	var message string
 	switch refType {
 	case "branch":
-		return fmt.Sprintf(
+		message = fmt.Sprintf(
 			"<b>🗑️ %s deleted the branch <i>%s</i> in <a href='%s'>%s</a></b>.\n",
 			sender,
 			ref,
-			event.Repo.GetHTMLURL(),
+			repoURL,
 			repo,
 		)
 	case "tag":
-		return fmt.Sprintf(
+		message = fmt.Sprintf(
 			"<b>🏷️ %s deleted the tag <i>%s</i> in <a href='%s'>%s</a></b>.\n",
 			sender,
 			ref,
-			event.Repo.GetHTMLURL(),
+			repoURL,
 			repo,
 		)
 	default:
-		return fmt.Sprintf(
+		message = fmt.Sprintf(
 			"<b>❌ %s deleted a %s <i>%s</i> in <a href='%s'>%s</a></b>.\n",
 			sender,
 			refType,
 			ref,
-			event.Repo.GetHTMLURL(),
+			repoURL,
 			repo,
 		)
 	}
+
+	return message
 }
 func handleForkEvent(event *github.ForkEvent) string {
 	originalRepo := event.Repo.GetFullName() // The original repository's full name
@@ -394,17 +401,19 @@ func handleForkEvent(event *github.ForkEvent) string {
 	originalStarCount := event.Repo.GetStargazersCount()
 
 	// Enhanced message with clickable repository links and better formatting
-	return fmt.Sprintf(
-		"<b>🍴 %s forked the repository <a href='%s'>%s</a> to create <a href='%s'>%s</a></b>.\n"+
+	message := fmt.Sprintf(
+		"<b>🍴 %s forked the repository <a href='https://github.com/%s'>%s</a> to create <a href='https://github.com/%s'>%s</a></b>\n"+
 			"🌟 The original repository has <b>%d stars</b> and <b>%d forks</b>.\n",
 		sender,
-		"https://github.com/"+originalRepo,
 		originalRepo,
-		"https://github.com/"+forkedRepo,
+		originalRepo,
+		forkedRepo,
 		forkedRepo,
 		originalStarCount,
 		originalForkCount,
 	)
+
+	return message
 }
 func handleCommitCommentEvent(event *github.CommitCommentEvent) string {
 	comment := event.Comment.GetBody()       // The body of the commit comment
@@ -413,44 +422,67 @@ func handleCommitCommentEvent(event *github.CommitCommentEvent) string {
 	sender := event.Sender.GetLogin()        // The user who made the comment
 	action := event.GetAction()              // The action (created, edited, deleted)
 
+	// Common base URL for GitHub
+	baseURL := "https://github.com/" + repo
+
+	// Prepare message based on action
 	switch action {
 	case "created":
 		return fmt.Sprintf(
-			"💬 <b>%s</b> commented on commit <b>%s</b> in <a href='https://github.com/%s'>%s</a>.\n"+
+			"💬 <b>%s</b> commented on commit <b>%s</b> in <a href='%s'>%s</a>.\n"+
 				"📝 <i>Comment:</i> %s\n",
 			sender,
 			commitSHA[:7], // First 7 characters of commit SHA for brevity
-			repo,
+			baseURL,
 			repo,
 			comment,
 		)
 	case "edited":
 		return fmt.Sprintf(
-			"✏️ <b>%s</b> edited their comment on commit <b>%s</b> in <a href='https://github.com/%s'>%s</a>.\n"+
+			"✏️ <b>%s</b> edited their comment on commit <b>%s</b> in <a href='%s'>%s</a>.\n"+
 				"📝 <i>Comment:</i> %s\n",
 			sender,
 			commitSHA[:7],
-			repo,
+			baseURL,
 			repo,
 			comment,
 		)
 	case "deleted":
 		return fmt.Sprintf(
-			"❌ <b>%s</b> deleted their comment on commit <b>%s</b> in <a href='https://github.com/%s'>%s</a>.\n",
+			"❌ <b>%s</b> deleted their comment on commit <b>%s</b> in <a href='%s'>%s</a>.\n",
 			sender,
 			commitSHA[:7],
-			repo,
+			baseURL,
 			repo,
 		)
 	default:
 		return fmt.Sprintf(
-			"⚠️ <b>%s</b> performed an unknown action on their comment on commit <b>%s</b> in <a href='https://github.com/%s'>%s</a>.\n",
+			"⚠️ <b>%s</b> performed an unknown action on their comment on commit <b>%s</b> in <a href='%s'>%s</a>.\n",
 			sender,
 			commitSHA[:7],
-			repo,
+			baseURL,
 			repo,
 		)
 	}
+}
+
+func handlePublicEvent(event *github.PublicEvent) string {
+	repoName := event.Repo.GetFullName() // Full name of the repository
+	repoURL := event.Repo.GetHTMLURL()   // URL of the repository
+	sender := event.Sender.GetLogin()    // User who made the repository public
+
+	// Build the message
+	message := fmt.Sprintf(
+		"🔓 The repository <b>%s</b> is now public!\n"+
+			"🌐 Repository URL: <a href=\"%s\">%s</a>\n"+
+			"👤 Made public by: <b>%s</b>",
+		repoName,
+		repoURL,
+		repoURL,
+		sender,
+	)
+
+	return message
 }
 
 func handleIssueCommentEvent(event *github.IssueCommentEvent) string {
@@ -506,7 +538,6 @@ func handleIssueCommentEvent(event *github.IssueCommentEvent) string {
 		)
 	}
 }
-
 func handleMemberEvent(event *github.MemberEvent) string {
 	action := event.GetAction()          // The action performed (added, removed, etc.)
 	member := event.Member.GetLogin()    // The login of the member
@@ -569,26 +600,6 @@ func handleMemberEvent(event *github.MemberEvent) string {
 
 	return message
 }
-
-func handlePublicEvent(event *github.PublicEvent) string {
-	repoName := event.Repo.GetFullName() // Full name of the repository
-	repoURL := event.Repo.GetHTMLURL()   // URL of the repository
-	sender := event.Sender.GetLogin()    // User who made the repository public
-
-	// Build the message
-	message := fmt.Sprintf(
-		"🔓 The repository <b>%s</b> is now public!\n"+
-			"🌐 Repository URL: <a href=\"%s\">%s</a>\n"+
-			"👤 Made public by: <b>%s</b>",
-		repoName,
-		repoURL,
-		repoURL,
-		sender,
-	)
-
-	return message
-}
-
 func handleRepositoryEvent(event *github.RepositoryEvent) string {
 	action := event.GetAction()          // The action performed (e.g., created, renamed, archived)
 	repoName := event.Repo.GetFullName() // Full name of the repository
@@ -611,9 +622,9 @@ func handleRepositoryEvent(event *github.RepositoryEvent) string {
 	case "renamed":
 		newName := event.Repo.GetName() // New name of the repository
 		message = fmt.Sprintf(
-			"🔄 Repository has been renamed"+
-				" to <b>%s</b>!\n"+
+			"🔄 Repository <b>%s</b> has been renamed to <b>%s</b>!\n"+
 				"👤 Renamed by: <b>%s</b>",
+			repoName,
 			newName,
 			sender,
 		)
@@ -634,7 +645,7 @@ func handleRepositoryEvent(event *github.RepositoryEvent) string {
 	default:
 		message = fmt.Sprintf(
 			"⚠️ <b>%s</b> performed an unknown action (<i>%s</i>) on repository <b>%s</b>.\n"+
-				"🌐 Repository URL: <a href=\"%s\">%s</a>",
+				"🌐 Repository URL: <a href='%s'>%s</a>",
 			sender,
 			action,
 			repoName,
@@ -649,16 +660,16 @@ func handleReleaseEvent(event *github.ReleaseEvent) string {
 	action := event.GetAction()               // Action performed (e.g., created, published, deleted, edited)
 	release := event.GetRelease()             // Release details
 	repoName := event.GetRepo().GetFullName() // Full name of the repository
-	//repoURL := event.GetRepo().GetHTMLURL()   // Repository HTML URL
-	sender := event.GetSender().GetLogin() // User who performed the action
+	sender := event.GetSender().GetLogin()    // User who performed the action
 
 	releaseName := release.GetName()        // Name of the release
 	releaseTag := release.GetTagName()      // Tag name of the release
 	releaseDescription := release.GetBody() // Description/body of the release
 	releaseURL := release.GetHTMLURL()      // HTML URL of the release
 
+	// Fallback for empty descriptions
 	if releaseDescription == "" {
-		releaseDescription = "No description provided." // Fallback for empty descriptions
+		releaseDescription = "No description provided."
 	}
 
 	var message string
@@ -724,7 +735,6 @@ func handleReleaseEvent(event *github.ReleaseEvent) string {
 
 	return message
 }
-
 func handleWatchEvent(event *github.WatchEvent) string {
 	action := event.GetAction()                 // The action performed (always 'started')
 	repoName := event.GetRepo().GetFullName()   // The full name of the repository (owner/repo-name)
@@ -746,9 +756,10 @@ func handleWatchEvent(event *github.WatchEvent) string {
 		)
 	default:
 		message = fmt.Sprintf(
-			"⚠️ <a href='%s'>%s</a> performed an unknown action on the repository <a href='%s'>%s</a>.",
+			"⚠️ <a href='%s'>%s</a> performed an unknown action (<i>%s</i>) on the repository <a href='%s'>%s</a>.",
 			senderURL,
 			sender,
+			action,
 			repoURL,
 			repoName,
 		)
@@ -756,7 +767,6 @@ func handleWatchEvent(event *github.WatchEvent) string {
 
 	return message
 }
-
 func handleStatusEvent(event *github.StatusEvent) string {
 	state := event.GetState()                   // The state of the status (success, error, pending)
 	description := event.GetDescription()       // The description of the status
@@ -819,7 +829,6 @@ func handleStatusEvent(event *github.StatusEvent) string {
 
 	return message
 }
-
 func handleWorkflowRunEvent(e *github.WorkflowRunEvent) string {
 	workflowName := e.GetWorkflow().GetName()        // The name of the workflow
 	runID := e.GetWorkflowRun().GetID()              // The ID of the workflow run
@@ -931,14 +940,14 @@ func handleWorkflowRunEvent(e *github.WorkflowRunEvent) string {
 	return message
 }
 func handleWorkflowJobEvent(e *github.WorkflowJobEvent) string {
-	jobName := e.GetWorkflowJob().GetName()          // The name of the job
-	jobID := e.GetWorkflowJob().GetID()              // The ID of the job
-	runID := e.GetWorkflowJob().GetRunID()           // The ID of the workflow run
-	status := e.GetWorkflowJob().GetStatus()         // The status of the job (queued, in_progress, completed)
-	conclusion := e.GetWorkflowJob().GetConclusion() // The conclusion of the job (success, failure, etc.)
-	jobURL := e.GetWorkflowJob().GetHTMLURL()        // The URL for the job details
-	repoName := e.GetRepo().GetFullName()            // The full name of the repository (owner/repo-name)
-	sender := e.GetSender().GetLogin()               // The username of the sender who triggered the event
+	jobName := e.GetWorkflowJob().GetName()
+	jobID := e.GetWorkflowJob().GetID()
+	runID := e.GetWorkflowJob().GetRunID()
+	status := e.GetWorkflowJob().GetStatus()
+	conclusion := e.GetWorkflowJob().GetConclusion()
+	jobURL := fmt.Sprintf("<a href='%s'>%s</a>", e.GetWorkflowJob().GetHTMLURL(), "Job Details")
+	repoName := e.GetRepo().GetFullName()
+	sender := e.GetSender().GetLogin()
 
 	var message string
 
@@ -984,8 +993,8 @@ func handleWorkflowJobEvent(e *github.WorkflowJobEvent) string {
 		}
 	default:
 		message = fmt.Sprintf(
-			"⚠️ Job '%s' has an UNKNOWN status in workflow run ID %d in repository *%s*. Job ID: %d (by %s)\nDetails: %s",
-			jobName, runID, repoName, jobID, sender, jobURL,
+			"⚠️ Job '%s' has an UNKNOWN status ('%s') in workflow run ID %d in repository *%s*. Job ID: %d (by %s)\nDetails: %s",
+			jobName, status, runID, repoName, jobID, sender, jobURL,
 		)
 	}
 
@@ -999,6 +1008,11 @@ func handleWorkflowDispatchEvent(e *github.WorkflowDispatchEvent) string {
 	eventType := "workflow_dispatch"      // Event type for manual workflow dispatch
 	ref := e.GetRef()                     // Get ref safely (branch or tag)
 
+	// Provide default if no workflow name is available
+	if workflowName == "" {
+		workflowName = "(Unnamed workflow)"
+	}
+
 	// Parse inputs if provided
 	var inputs string
 	if e.Inputs != nil {
@@ -1007,14 +1021,14 @@ func handleWorkflowDispatchEvent(e *github.WorkflowDispatchEvent) string {
 			// Convert inputs map to a formatted string
 			var formattedInputs []string
 			for key, value := range inputsMap {
-				formattedInputs = append(formattedInputs, fmt.Sprintf("<b>%s</b>: <i>%v</i>", key, value))
+				formattedInputs = append(formattedInputs, fmt.Sprintf("<b>%s</b>: <i>%s</i>", key, html.EscapeString(fmt.Sprintf("%v", value))))
 			}
 			inputs = strings.Join(formattedInputs, ", ")
 		} else {
 			inputs = "<i>(Invalid JSON inputs)</i>"
 		}
 	} else {
-		inputs = "<i>(No inputs provided)</i>"
+		inputs = "<i>No inputs provided</i>"
 	}
 
 	// Build the message using HTML
@@ -1040,6 +1054,26 @@ func handleTeamAddEvent(e *github.TeamAddEvent) string {
 	orgName := e.GetOrg().GetLogin()      // Organization name
 	sender := e.GetSender().GetLogin()    // Username of the sender who triggered the event
 
+	// Handle missing values
+	if teamName == "" {
+		teamName = "(Unnamed team)"
+	}
+	if repoName == "" {
+		repoName = "(Unknown repository)"
+	}
+	if orgName == "" {
+		orgName = "(Unknown organization)"
+	}
+	if sender == "" {
+		sender = "(Unknown sender)"
+	}
+
+	// Sanitize values to avoid potential HTML issues
+	teamName = html.EscapeString(teamName)
+	repoName = html.EscapeString(repoName)
+	orgName = html.EscapeString(orgName)
+	sender = html.EscapeString(sender)
+
 	// Build the message using HTML formatting
 	message := fmt.Sprintf(
 		"👥 <b>Team</b> '%s' has been added to repository <b>%s</b> in the organization <b>%s</b> by <b>%s</b>.",
@@ -1058,6 +1092,22 @@ func handleTeamEvent(e *github.TeamEvent) string {
 	orgName := e.GetOrg().GetLogin()   // Organization name
 	sender := e.GetSender().GetLogin() // Username of the sender who triggered the event
 
+	// Handle missing values
+	if teamName == "" {
+		teamName = "(Unnamed team)"
+	}
+	if orgName == "" {
+		orgName = "(Unknown organization)"
+	}
+	if sender == "" {
+		sender = "(Unknown sender)"
+	}
+
+	// Sanitize values to avoid potential HTML issues
+	teamName = html.EscapeString(teamName)
+	orgName = html.EscapeString(orgName)
+	sender = html.EscapeString(sender)
+
 	// Build the message using HTML formatting
 	var message string
 	switch action {
@@ -1073,12 +1123,14 @@ func handleTeamEvent(e *github.TeamEvent) string {
 
 	return message
 }
+
 func handleStarEvent(e *github.StarEvent) string {
 	// Extract star event details
 	repoName := e.GetRepo().GetFullName() // Repository full name (owner/repo-name)
 	userName := e.GetSender().GetLogin()  // Username of the person who starred the repo
+	repoName = html.EscapeString(repoName)
+	userName = html.EscapeString(userName)
 
-	// Build the message with HTML formatting
 	message := fmt.Sprintf("⭐ <b>%s</b> has starred the repository <b>%s</b>.", userName, repoName)
 	return message
 }
