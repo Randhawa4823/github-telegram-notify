@@ -1,6 +1,7 @@
 package str
 
 import (
+	"errors"
 	"fmt"
 	"github-webhook/GithubEvent/config"
 	"io"
@@ -9,14 +10,14 @@ import (
 	"strings"
 )
 
-func sendToTelegram(chatID, message string) {
+func sendToTelegram(chatID, message string) error {
 	if message == "" || chatID == "" {
-		return
+		return errors.New("message or chatID is empty")
 	}
 
 	if config.BotToken == "" {
 		log.Println("Telegram bot token is not set")
-		return
+		return errors.New("telegram bot token is not set")
 	}
 
 	telegramURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", config.BotToken)
@@ -24,14 +25,14 @@ func sendToTelegram(chatID, message string) {
 	req, err := http.NewRequest("POST", telegramURL, strings.NewReader(payload))
 	if err != nil {
 		log.Println("Error creating request:", err)
-		return
+		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error sending request to Telegram:", err)
-		return
+		return err
 	}
 
 	defer func(Body io.ReadCloser) {
@@ -43,7 +44,9 @@ func sendToTelegram(chatID, message string) {
 
 	if resp.StatusCode != http.StatusOK {
 		log.Println("Error response from Telegram:", resp.Status)
+		return err
 	} else {
 		log.Println("Message sent to Telegram")
+		return nil
 	}
 }

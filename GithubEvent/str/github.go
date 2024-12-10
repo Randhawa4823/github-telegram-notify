@@ -2,10 +2,11 @@ package str
 
 import (
 	"fmt"
+	"github-webhook/GithubEvent/config"
+	"github.com/google/go-github/v67/github"
 	"log"
 	"net/http"
-
-	"github.com/google/go-github/v67/github"
+	"strings"
 )
 
 // GitHubWebhook processes GitHub webhooks
@@ -139,10 +140,14 @@ func GitHubWebhook(w http.ResponseWriter, r *http.Request) {
 	chatID := r.URL.Query().Get("chat_id")
 	if chatID == "" {
 		http.Error(w, "Missing chat_id query parameter", http.StatusBadRequest)
-		chatID = ""
+		return
 	}
 
-	_, _ = w.Write([]byte(message))
-	sendToTelegram(chatID, message)
+	err = sendToTelegram(chatID, message)
+	if err != nil {
+		http.Error(w, strings.ReplaceAll(err.Error(), config.BotToken, "$Bot"), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(message))
 }
