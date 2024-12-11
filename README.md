@@ -68,3 +68,8 @@ request.
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+## Support | Feedback | Issues
+
+If you have any questions, feedback, or issues, please contact me at [Telegram](https://t.me/AshokShau). 
+[Update Channel](https://t.me/FallenProjects)
