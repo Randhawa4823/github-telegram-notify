@@ -3,7 +3,7 @@ package str
 import (
 	"fmt"
 	"github-webhook/GithubEvent/config"
-	"github.com/google/go-github/v67/github"
+	"github.com/google/go-github/v71/github"
 	"log"
 	"net/http"
 	"strings"
@@ -97,12 +97,6 @@ func GitHubWebhook(w http.ResponseWriter, r *http.Request) {
 		message = handleMarketplacePurchaseEvent(e)
 	case *github.PageBuildEvent:
 		message = handlePageBuildEvent(e)
-	case *github.ProjectEvent:
-		message = handleProjectEvent(e)
-	case *github.ProjectCardEvent:
-		message = handleProjectCardEvent(e)
-	case *github.ProjectColumnEvent:
-		message = handleProjectColumnEvent(e)
 	case *github.DeployKeyEvent:
 		message = handleDeployKeyEvent(e)
 	case *github.StarredRepository:

@@ -6,7 +6,7 @@ import (
 	"html"
 	"strings"
 
-	"github.com/google/go-github/v67/github"
+	"github.com/google/go-github/v71/github"
 )
 
 func handleIssuesEvent(event *github.IssuesEvent) string {
@@ -265,11 +265,41 @@ func handlePushEvent(event *github.PushEvent) string {
 				author,
 				url,
 			)
+			/*
+				// Add details about files changed in each commit
+				added := commit.Added
+				removed := commit.Removed
+				modified := commit.Modified
 
-			// Add details about files changed in each commit
-			added := commit.Added
-			removed := commit.Removed
-			modified := commit.Modified
+				if len(added) > 0 || len(removed) > 0 || len(modified) > 0 {
+					message += "<i>📁 Changed Files:</i>\n"
+					if len(added) > 0 {
+						message += fmt.Sprintf("<b>➕ Added:</b> %v\n", added)
+					}
+					if len(removed) > 0 {
+						message += fmt.Sprintf("<b>❌ Removed:</b> %v\n", removed)
+					}
+					if len(modified) > 0 {
+						message += fmt.Sprintf("<b>✏️ Modified:</b> %v\n", modified)
+					}
+				}
+			*/
+			message += "\n"
+		}
+	} else if event.HeadCommit != nil {
+		// Add details for the head commit if no commit list is provided
+		headCommit := event.HeadCommit
+		message += fmt.Sprintf(
+			"<b>📍 Head Commit:</b> <i>%s</i> by <b>%s</b> (<a href='%s'>View Commit</a>)\n",
+			headCommit.GetMessage(),
+			headCommit.Author.GetName(),
+			headCommit.GetURL(),
+		)
+		/*
+			// Add files changed in the head commit
+			added := headCommit.Added
+			removed := headCommit.Removed
+			modified := headCommit.Modified
 
 			if len(added) > 0 || len(removed) > 0 || len(modified) > 0 {
 				message += "<i>📁 Changed Files:</i>\n"
@@ -283,35 +313,7 @@ func handlePushEvent(event *github.PushEvent) string {
 					message += fmt.Sprintf("<b>✏️ Modified:</b> %v\n", modified)
 				}
 			}
-			message += "\n"
-		}
-	} else if event.HeadCommit != nil {
-		// Add details for the head commit if no commit list is provided
-		headCommit := event.HeadCommit
-		message += fmt.Sprintf(
-			"<b>📍 Head Commit:</b> <i>%s</i> by <b>%s</b> (<a href='%s'>View Commit</a>)\n",
-			headCommit.GetMessage(),
-			headCommit.Author.GetName(),
-			headCommit.GetURL(),
-		)
-
-		// Add files changed in the head commit
-		added := headCommit.Added
-		removed := headCommit.Removed
-		modified := headCommit.Modified
-
-		if len(added) > 0 || len(removed) > 0 || len(modified) > 0 {
-			message += "<i>📁 Changed Files:</i>\n"
-			if len(added) > 0 {
-				message += fmt.Sprintf("<b>➕ Added:</b> %v\n", added)
-			}
-			if len(removed) > 0 {
-				message += fmt.Sprintf("<b>❌ Removed:</b> %v\n", removed)
-			}
-			if len(modified) > 0 {
-				message += fmt.Sprintf("<b>✏️ Modified:</b> %v\n", modified)
-			}
-		}
+		*/
 	}
 
 	return message
@@ -1238,45 +1240,6 @@ func truncateComment(comment string, maxLength int) string {
 	return comment
 }
 
-func handleProjectColumnEvent(e *github.ProjectColumnEvent) string {
-	// Extract details from the event
-	action := e.GetAction()                      // Action performed on the project column (e.g., created, updated, moved, deleted)
-	columnName := e.GetProjectColumn().GetName() // Name of the project column
-	repoName := e.GetRepo().GetFullName()        // Full name of the repository (owner/repo)
-	sender := e.GetSender()                      // User who triggered the event
-	orgName := e.GetOrg().GetLogin()             // Organization name (if applicable)
-
-	// After ID is used for actions like "moved"
-	afterID := e.GetAfterID() // ID of the column after which this column was moved
-	afterIDMessage := ""
-	if afterID != 0 {
-		afterIDMessage = fmt.Sprintf(" (After Column ID: %d)", afterID)
-	}
-
-	// Determine actor
-	actor := "Unknown Actor"
-	if sender != nil {
-		actor = sender.GetLogin()
-	} else if orgName != "" {
-		actor = fmt.Sprintf("Organization: %s", orgName)
-	}
-
-	// Build response message
-	message := fmt.Sprintf(
-		"📋 A Project Column event occurred in repository *%s*.\n"+
-			"👤 Actor: %s\n"+
-			"🔧 Action: %s\n"+
-			"📂 Column: %s%s",
-		repoName,
-		actor,
-		action,
-		columnName,
-		afterIDMessage,
-	)
-
-	return message
-}
-
 func handlePullRequestReviewEvent(e *github.PullRequestReviewEvent) string {
 	// Extract event details
 	action := e.GetAction()                    // Action performed on the review (e.g., submitted, edited, dismissed)
@@ -1319,85 +1282,6 @@ func handlePullRequestReviewEvent(e *github.PullRequestReviewEvent) string {
 		prTitle,
 		truncateComment(reviewBody, 150), // Helper to truncate long review comments
 		reviewURL,
-	)
-
-	return message
-}
-
-func handleProjectCardEvent(e *github.ProjectCardEvent) string {
-	// Extract event details
-	action := e.GetAction()                  // Action performed on the project card (e.g., created, updated, deleted)
-	cardNote := e.GetProjectCard().GetNote() // Note/content of the project card
-	repoName := e.GetRepo().GetFullName()    // Full name of the repository (owner/repo)
-	sender := e.GetSender()                  // User who triggered the event
-	orgName := e.GetOrg().GetLogin()         // Organization name (if applicable)
-
-	// After ID is used for actions like "moved"
-	afterID := e.GetAfterID() // ID of the card after which this card was moved
-	afterIDMessage := ""
-	if afterID != 0 {
-		afterIDMessage = fmt.Sprintf(" <b>(After Card ID: %d)</b>", afterID)
-	}
-
-	// Determine actor
-	actor := "Unknown Actor"
-	if sender != nil {
-		actor = sender.GetLogin()
-	} else if orgName != "" {
-		actor = fmt.Sprintf("Organization: <b>%s</b>", orgName)
-	}
-
-	// Handle empty card notes
-	cardContent := "No content"
-	if cardNote != "" {
-		cardContent = cardNote
-	}
-
-	// Build the response message with HTML formatting
-	message := fmt.Sprintf(
-		"📌 A Project Card event occurred in repository <b>%s</b>.\n"+
-			"👤 Actor: <b>%s</b>\n"+
-			"🔧 Action: <b>%s</b>\n"+
-			"📝 Card Content: <i>%s</i>%s",
-		repoName,
-		actor,
-		action,
-		truncateComment(cardContent, 150), // Helper to truncate long card content
-		afterIDMessage,
-	)
-
-	return message
-}
-func handleProjectEvent(e *github.ProjectEvent) string {
-	// Extract event details
-	action := e.GetAction()                   // Action performed on the project (e.g., created, updated, deleted)
-	projectName := e.GetProject().GetName()   // Project name
-	projectURL := e.GetProject().GetHTMLURL() // URL to the project
-	repoName := e.GetRepo().GetFullName()     // Full name of the repository (owner/repo)
-	sender := e.GetSender()                   // User who triggered the event
-	orgName := e.GetOrg().GetLogin()          // Organization name (if applicable)
-
-	// Determine the actor (User or Organization)
-	actor := "Unknown Actor"
-	if sender != nil {
-		actor = sender.GetLogin()
-	} else if orgName != "" {
-		actor = fmt.Sprintf("Organization: <b>%s</b>", orgName)
-	}
-
-	// Build the response message with HTML formatting
-	message := fmt.Sprintf(
-		"📂 A Project event occurred in repository <b>%s</b>.\n"+
-			"👤 Actor: <b>%s</b>\n"+
-			"🔧 Action: <b>%s</b>\n"+
-			"📊 Project: <b>%s</b>\n"+
-			"🔗 Project URL: <a href='%s'>%s</a>",
-		repoName,
-		actor,
-		action,
-		projectName,
-		projectURL,
-		projectURL,
 	)
 
 	return message
