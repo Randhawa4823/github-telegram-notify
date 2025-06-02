@@ -166,10 +166,9 @@ const indexHTML = `<!DOCTYPE html>
         <h3 style="color: var(--primary-color); text-align: center; margin-top: 0;">Usage</h3>
         <p>Configure your GitHub webhook to send POST requests to:</p>
         <p><code>/github</code></p>
-        <p>Optional query parameters:</p>
+        <p>Query parameters:</p>
         <ul style="list-style-type: none; padding-left: 0;">
             <li><code>chat_id</code> - Specify Telegram chat ID for notifications</li>
-            <li><code>secret</code> - Add webhook secret for verification</li>
         </ul>
         <p>Example: <a href="/github?chat_id=123456789" target="_blank" rel="noopener noreferrer">/github?chat_id=123456789</a></p>
     </div>

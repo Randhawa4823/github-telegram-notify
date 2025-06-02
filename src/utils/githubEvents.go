@@ -63,6 +63,7 @@ func HandleIssuesEvent(event *github.IssuesEvent) string {
 
 	return msg
 }
+
 func HandlePullRequestEvent(event *github.PullRequestEvent) string {
 	repo := event.GetRepo().GetFullName()
 	action := event.GetAction()
@@ -153,6 +154,14 @@ func HandlePushEvent(event *github.PushEvent) string {
 		"🔨 <b>%d new commit(s)</b> (<a href='%s'>compare</a>) to <code>%s:%s</code>:\n\n",
 		commitCount, compareURL, repo, branch,
 	)
+
+	if event.GetCreated() {
+		msg += "🌱 <i>New branch created</i>\n"
+	} else if event.GetDeleted() {
+		msg += "🗑️ <i>Branch deleted</i>\n"
+	} else if event.GetForced() {
+		msg += "⚠️ <i>Force pushed</i>\n"
+	}
 
 	for _, commit := range event.Commits {
 		shortSHA := commit.GetID()
