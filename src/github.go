@@ -138,6 +138,12 @@ func GitHubWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if message == "" {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+		return
+	}
+
 	err = utils.SendToTelegram(chatID, message)
 	if err != nil {
 		http.Error(w, strings.ReplaceAll(err.Error(), config.BotToken, "$Bot"), http.StatusInternalServerError)

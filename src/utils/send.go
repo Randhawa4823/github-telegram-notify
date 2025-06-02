@@ -11,10 +11,6 @@ import (
 )
 
 func SendToTelegram(chatID, message string) error {
-	if message == "" || chatID == "" {
-		return errors.New("message or chatID is empty")
-	}
-
 	if config.BotToken == "" {
 		log.Println("Telegram bot token is not set")
 		return errors.New("telegram bot token is not set")

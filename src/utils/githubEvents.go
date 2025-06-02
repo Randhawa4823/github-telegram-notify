@@ -150,8 +150,12 @@ func HandlePushEvent(event *github.PushEvent) string {
 	compareURL := event.GetCompare()
 	commitCount := len(event.Commits)
 
+	if commitCount == 0 {
+		return ""
+	}
+
 	msg := fmt.Sprintf(
-		"🔨 <b>%d new commit(s)</b> (<a href='%s'>compare</a>) to <code>%s:%s</code>:\n\n",
+		"🔨 <b>%d</b> <a href='%s'>new commit(s)</a> to <code>%s:%s</code>:\n\n",
 		commitCount, compareURL, repo, branch,
 	)
 
@@ -169,12 +173,20 @@ func HandlePushEvent(event *github.PushEvent) string {
 			shortSHA = shortSHA[:7]
 		}
 		msg += fmt.Sprintf(
-			"<code>%s</code> (<a href='%s/commit/%s'>link</a>): %s by %s\n",
-			shortSHA,
+			"• <a href='%s/commit/%s'>%s</a>: %s by @%s\n",
 			repoURL,
 			commit.GetID(),
+			shortSHA,
 			htmlEscape(commit.GetMessage()),
 			htmlEscape(commit.Author.GetName()),
+		)
+	}
+
+	if len(msg) > 4000 {
+		return fmt.Sprintf(
+			"🔨 <b>%d</b> <a href='%s'>new commit(s)</a> to <code>%s:%s</code>:\n\n"+
+				"⚠️ <i>Too many commits to display, check the repository for details.</i>\n",
+			commitCount, compareURL, repo, branch,
 		)
 	}
 
@@ -556,45 +568,57 @@ func HandleWorkflowRunEvent(e *github.WorkflowRunEvent) string {
 		run.GetHTMLURL(),
 	)
 }
+
 func HandleWorkflowJobEvent(e *github.WorkflowJobEvent) string {
-	job := e.GetWorkflowJob()
-	status := job.GetStatus()
-	conclusion := job.GetConclusion()
-	repo := e.GetRepo().GetFullName()
-
-	// Status emojis and labels
-	statusInfo := map[string]struct {
-		emoji string
-		label string
-	}{
-		"queued":      {"🔄", "Queued"},
-		"in_progress": {"⏳", "Running"},
-		"completed":   {"✅", "Completed"},
-		"success":     {"✅", "Success"},
-		"failure":     {"❌", "Failed"},
-		"neutral":     {"⚖️", "Neutral"},
-		"cancelled":   {"⛔", "Cancelled"},
-	}[status+"_"+conclusion]
-
-	if statusInfo.emoji == "" {
-		statusInfo = struct {
-			emoji string
-			label string
-		}{"⚠️", "Unknown status"}
+	if e == nil {
+		return "⚙️ <b>No workflow job data</b>"
 	}
 
-	return fmt.Sprintf(
-		"%s <b>%s</b> job\n"+
-			"<b>Status:</b> %s\n"+
-			"<b>Repo:</b> %s\n"+
-			"<b>By:</b> %s | <a href='%s'>View Job</a>",
-		statusInfo.emoji,
-		job.GetName(),
-		statusInfo.label,
-		repo,
-		e.GetSender().GetLogin(),
-		job.GetHTMLURL(),
-	)
+	job := e.GetWorkflowJob()
+	if job == nil {
+		return "⚙️ <b>Invalid workflow job</b>"
+	}
+
+	status := job.GetStatus()
+	conclusion := job.GetConclusion()
+	statusEmoji := "⚙️"
+	statusText := strings.Title(status)
+
+	switch {
+	case status == "completed" && conclusion == "success":
+		statusEmoji = "✅"
+		statusText = "Success"
+	case status == "completed" && conclusion == "failure":
+		statusEmoji = "❌"
+		statusText = "Failed"
+	case status == "in_progress":
+		statusEmoji = "⏳"
+	case status == "queued":
+		statusEmoji = "🔄"
+	case conclusion == "cancelled":
+		statusEmoji = "⛔"
+		statusText = "Cancelled"
+	}
+
+	msg := fmt.Sprintf("%s <b>Workflow Job %s</b>\n", statusEmoji, statusText)
+	msg += fmt.Sprintf("<b>Name:</b> %s\n", job.GetName())
+	msg += fmt.Sprintf("<b>Repo:</b> %s\n", e.GetRepo().GetFullName())
+
+	if !job.GetStartedAt().IsZero() {
+		msg += fmt.Sprintf("<b>Started:</b> %s\n", job.GetStartedAt().Format("2006-01-02 15:04"))
+	}
+	if !job.GetCompletedAt().IsZero() {
+		msg += fmt.Sprintf("<b>Completed:</b> %s\n", job.GetCompletedAt().Format("2006-01-02 15:04"))
+	}
+
+	if runner := job.GetRunnerName(); runner != "" {
+		msg += fmt.Sprintf("<b>Runner:</b> %s\n", runner)
+	}
+
+	msg += fmt.Sprintf("<b>By:</b> %s\n", e.GetSender().GetLogin())
+	msg += fmt.Sprintf("<a href=\"%s\">View Job</a>", job.GetHTMLURL())
+
+	return msg
 }
 
 func HandleWorkflowDispatchEvent(e *github.WorkflowDispatchEvent) string {
