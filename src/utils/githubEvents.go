@@ -141,54 +141,42 @@ func HandleStarredEvent(event *github.StarredRepository) string {
 		stars,
 	)
 }
+
 func HandlePushEvent(event *github.PushEvent) string {
-	repo := event.Repo.GetFullName()
+	repo := event.Repo.GetName()
 	repoURL := event.Repo.GetHTMLURL()
-	sender := event.Sender.GetLogin()
 	branch := strings.TrimPrefix(event.GetRef(), "refs/heads/")
 	compareURL := event.GetCompare()
 	commitCount := len(event.Commits)
 
-	// Base message
 	msg := fmt.Sprintf(
-		"<b>📌 Push to</b> <a href='%s'>%s</a> (<code>%s</code>)\n"+
-			"<b>👤 By:</b> %s\n"+
-			"<b>📊 Commits:</b> %d\n",
-		repoURL, repo, branch,
-		sender,
-		commitCount,
+		"🔨 <b>%d new commit(s)</b> (<a href='%s'>compare</a>) to <code>%s:%s</code>:\n\n",
+		commitCount, compareURL, repo, branch,
 	)
 
-	// Special flags
-	if event.GetCreated() {
-		msg += "🌱 <i>New branch created</i>\n"
-	} else if event.GetDeleted() {
-		msg += "🗑️ <i>Branch deleted</i>\n"
-	} else if event.GetForced() {
-		msg += "⚠️ <i>Force pushed</i>\n"
-	}
-
-	// Add compare URL
-	msg += fmt.Sprintf("<a href='%s'>View changes</a>\n", compareURL)
-	if commitCount > 0 {
-		msg += "\n<b>Recent commits:</b>\n"
-		maxCommits := 5
-		if commitCount < maxCommits {
-			maxCommits = commitCount
+	for _, commit := range event.Commits {
+		shortSHA := commit.GetID()
+		if len(shortSHA) > 7 {
+			shortSHA = shortSHA[:7]
 		}
-		for _, commit := range event.Commits[:maxCommits] {
-			msg += fmt.Sprintf(
-				"• %s - %s\n",
-				commit.GetMessage(),
-				commit.Author.GetName(),
-			)
-		}
-		if commitCount > maxCommits {
-			msg += fmt.Sprintf("... and %d more\n", commitCount-maxCommits)
-		}
+		msg += fmt.Sprintf(
+			"<code>%s</code> (<a href='%s/commit/%s'>link</a>): %s by %s\n",
+			shortSHA,
+			repoURL,
+			commit.GetID(),
+			htmlEscape(commit.GetMessage()),
+			htmlEscape(commit.Author.GetName()),
+		)
 	}
 
 	return msg
+}
+
+func htmlEscape(input string) string {
+	input = strings.ReplaceAll(input, "&", "&amp;")
+	input = strings.ReplaceAll(input, "<", "&lt;")
+	input = strings.ReplaceAll(input, ">", "&gt;")
+	return input
 }
 
 func HandleCreateEvent(event *github.CreateEvent) string {
